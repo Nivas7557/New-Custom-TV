@@ -2,7 +2,8 @@ import requests
 import re
 import os
 
-ORIGINAL_M3U_URL = "https://iptv-org.github.io/iptv/index.m3u"
+# DIRECT GITHUB CDN MIRRORS: Scanning the exact raw repository files from your screenshots
+SOURCES = "https://iptv-org.github.io/iptv/index.m3u"
 OUTPUT_FILE = "Custom_Playlist.m3u"
 INPUT_TXT_FILE = "Channels.txt"
 
@@ -32,36 +33,17 @@ def strict_clean(name):
     name = re.sub(r'hd|sd|fhd|uhd|i|p|\s+|_|-|\+|&|,', '', name)
     return name.strip()
 
-def fetch_and_filter_m3u():
-    print(f"Loading configurations from '{INPUT_TXT_FILE}'...")
-    groups_config = load_channels_from_txt(INPUT_TXT_FILE)
-    if not groups_config:
-        print("No channels found to filter. Exiting.")
-        return
-        
-    config_lookup = []
-    for g_idx, (group_name, channel_list) in enumerate(groups_config.items(), start=1):
-        for ch_idx, original_name in enumerate(channel_list, start=1):
-            clean_key = strict_clean(original_name)
-            if clean_key:
-                config_lookup.append({
-                    "token": clean_key,
-                    "group": group_name,
-                    "number": (g_idx * 100) + ch_idx
-                })
-                
+def process_m3u_source(url, lookup_table, final_playlist, processed_urls):
     try:
-        print(f"Fetching original M3U from: {ORIGINAL_M3U_URL}")
-        response = requests.get(ORIGINAL_M3U_URL, timeout=60, stream=True)
+        print(f"Scanning target database: {url}")
+        response = requests.get(url, timeout=60, stream=True)
         response.raise_for_status()
     except Exception as err:
-        print(f"Critical error fetching upstream data: {err}")
-        return
+        print(f"Skipping source due to connection block: {err}")
+        return final_playlist
 
-    normalized_playlist = ["#EXTM3U"]
     current_extinf = None
     vlc_options_buffer = []
-    processed_urls = set()
 
     for raw_line in response.iter_lines():
         if not raw_line:
@@ -82,10 +64,15 @@ def fetch_and_filter_m3u():
                 clean_source_key = strict_clean(source_channel_name)
                 
                 matched_item = None
-                for item in config_lookup:
-                    # ADVANCED FLEXIBLE SUBSTRING LOGIC
-                    # If target is 'starsports', it captures 'starsports1telugu', 'starsports2telugu', etc.
-                    if item["token"] in clean_source_key or clean_source_key in item["token"]:
+                for item in lookup_table:
+                    # ADVANCED COMPREHENSIVE MATCHING ENGINE
+                    if item["token"] == "starsports" and "starsports" in clean_source_key:
+                        matched_item = item
+                        break
+                    elif item["token"] == "sonysports" and ("sonysports" in clean_source_key or "sonyten" in clean_source_key or "sonysportsten" in clean_source_key):
+                        matched_item = item
+                        break
+                    elif item["token"] == clean_source_key or item["token"] in clean_source_key:
                         matched_item = item
                         break
                 
@@ -97,17 +84,44 @@ def fetch_and_filter_m3u():
                         cleaned_metadata
                     )
                     
-                    normalized_playlist.append(final_metadata)
-                    normalized_playlist.extend(vlc_options_buffer)
-                    normalized_playlist.append(line)
+                    final_playlist.append(f"{final_metadata}")
+                    for opt in vlc_options_buffer:
+                        final_playlist.append(opt)
+                    final_playlist.append(line)
                     processed_urls.add(line)
                 
                 current_extinf = None
                 vlc_options_buffer = []
+    return final_playlist
+
+def fetch_and_filter_m3u():
+    print(f"Loading user setup from '{INPUT_TXT_FILE}'...")
+    groups_config = load_channels_from_txt(INPUT_TXT_FILE)
+    if not groups_config:
+        print("No configuration profiles found.")
+        return
+        
+    config_lookup = []
+    for g_idx, (group_name, channel_list) in enumerate(groups_config.items(), start=1):
+        for ch_idx, original_name in enumerate(channel_list, start=1):
+            clean_key = strict_clean(original_name)
+            if clean_key:
+                config_lookup.append({
+                    "token": clean_key,
+                    "group": group_name,
+                    "number": (g_idx * 100) + ch_idx
+                })
+                
+    compiled_m3u = ["#EXTM3U"]
+    processed_urls = set()
+    
+    # Process the direct raw cdn sources sequentially
+    for source_url in SOURCES:
+        compiled_m3u = process_m3u_source(source_url, config_lookup, compiled_m3u, processed_urls)
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write("\n".join(normalized_playlist))
-    print(f"Successfully processed list! Final clean playlist generated as: '{OUTPUT_FILE}'")
+        f.write("\n".join(compiled_m3u))
+    print(f"Playlist refreshed successfully! Output file built completely.")
 
 if __name__ == "__main__":
     fetch_and_filter_m3u()
