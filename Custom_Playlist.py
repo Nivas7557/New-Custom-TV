@@ -29,7 +29,6 @@ def strict_clean(name):
         return ""
     name = name.lower()
     name = re.sub(r'\(.*?\)', '', name)
-    name = re.sub(r'\.in|\.us|\.tv|\.ua|\.ru|\.net|\.ke|\.et|\.do', '', name)
     name = re.sub(r'hd|sd|fhd|uhd|i|p|\s+|_|-|\+|&|,', '', name)
     return name.strip()
 
@@ -84,20 +83,9 @@ def fetch_and_filter_m3u():
                 
                 matched_item = None
                 for item in config_lookup:
-                    # ADVANCED MULTI-WILD CARD MATCHING ENGINE (Running solely on Global)
-                    if item["token"] == clean_source_key:
-                        matched_item = item
-                        break
-                    # Wildcard match for Star Sports Telugu variants
-                    elif item["token"] == "starsportstelugu" and "starsports" in clean_source_key and "telugu" in clean_source_key:
-                        matched_item = item
-                        break
-                    # Wildcard match for Sony Sports variants
-                    elif item["token"] == "sonysports" and "sonysports" in clean_source_key:
-                        matched_item = item
-                        break
-                    # Universal substring inclusion fallback
-                    elif len(item["token"]) > 5 and item["token"] in clean_source_key:
+                    # ADVANCED FLEXIBLE SUBSTRING LOGIC
+                    # If target is 'starsports', it captures 'starsports1telugu', 'starsports2telugu', etc.
+                    if item["token"] in clean_source_key or clean_source_key in item["token"]:
                         matched_item = item
                         break
                 
