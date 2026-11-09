@@ -2,7 +2,7 @@ import requests
 import re
 import os
 
-ORIGINAL_M3U_URL = "https://github.io"
+ORIGINAL_M3U_URL = "https://iptv-org.github.io/iptv/index.m3u"
 OUTPUT_FILE = "Custom_Playlist.m3u"  # Updated to look for exact underscore filename
 INPUT_TXT_FILE = "Channels.txt"      # Updated to capitalized Channels.txt
 
