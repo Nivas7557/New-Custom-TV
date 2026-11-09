@@ -1,17 +1,6 @@
 [Sports Channels]
-Star Sports 1 Telugu
-Star Sports 1 Telugu HD
-Sony Sports Ten 4 HD (Telugu)
-Star Sports 1
-Star Sports 2
-Star Sports 1 Hindi
-Star Sports First
-Sony Sports Ten 1 HD
-Sony Sports Ten 2 HD
-Sony Sports Ten 3 HD
-Sony Sports Ten 5 HD
-Sports18
-Eurosport
+Star Sports Telugu
+Sony Sports
 beIN SPORTS XTRA
 
 [Entertainment Group]
