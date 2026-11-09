@@ -2,9 +2,10 @@ import requests
 import re
 import os
 
+# REVERTED TO GLOBAL LINK: Adhering strictly to your provided file source
 ORIGINAL_M3U_URL = "https://iptv-org.github.io/iptv/index.m3u"
-OUTPUT_FILE = "Custom_Playlist.m3u"  # Updated to look for exact underscore filename
-INPUT_TXT_FILE = "Channels.txt"      # Updated to capitalized Channels.txt
+OUTPUT_FILE = "Custom_Playlist.m3u"
+INPUT_TXT_FILE = "Channels.txt"
 
 def load_channels_from_txt(file_path):
     """Reads the custom Channels.txt file and parses groups and channels structured in order."""
@@ -31,11 +32,15 @@ def load_channels_from_txt(file_path):
     return groups_dict
 
 def strict_clean(name):
-    """Normalises strings into a character-only base token for resilient comparisons."""
+    """Advanced normaliser that strips all country tags, bracket info, resolutions, and special characters."""
     if not name:
         return ""
     name = name.lower()
+    # Removes all content inside parentheses entirely, e.g., (720p), (india), (united states)
     name = re.sub(r'\(.*?\)', '', name)
+    # Removes country domain suffixes often found in global lists like .in, .us, .tv
+    name = re.sub(r'\.in|\.us|\.tv|\.ua|\.ru|\.net|\.ke|\.et|\.do', '', name)
+    # Strips all resolutions, quality descriptors, spaces, and punctuations
     name = re.sub(r'hd|sd|fhd|uhd|i|p|\s+|_|-|\+|&|,', '', name)
     return name.strip()
 
@@ -62,6 +67,7 @@ def fetch_and_filter_m3u():
     print(f"Lookup dictionary built successfully with {len(lookup_map)} lookup tokens.")
     
     try:
+        print(f"Fetching original M3U from: {ORIGINAL_M3U_URL}")
         response = requests.get(ORIGINAL_M3U_URL, timeout=60, stream=True)
         response.raise_for_status()
     except Exception as err:
